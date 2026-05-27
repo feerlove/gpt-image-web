@@ -399,46 +399,23 @@ function extractErrorMessage(payload) {
 }
 
 function extractImages(payload, outputFormat) {
-  const candidates = Array.isArray(payload?.data)
-    ? payload.data
-    : Array.isArray(payload?.images)
-      ? payload.images
-      : Array.isArray(payload?.result)
-        ? payload.result
-        : []
+  const directContainers = [
+    payload,
+    payload?.data,
+    payload?.images,
+    payload?.result,
+    payload?.output,
+    payload?.content,
+  ].filter(Boolean)
 
-  return candidates
-    .map((item) => {
-      const mimeType = detectMimeType(item, outputFormat)
+  const collected = []
+  const seen = new Set()
 
-      if (typeof item?.url === 'string' && item.url) {
-        return {
-          src: item.url,
-          mimeType,
-          revisedPrompt: item.revised_prompt || item.prompt || '',
-        }
-      }
+  for (const container of directContainers) {
+    collectImageEntries(container, outputFormat, collected, seen)
+  }
 
-      const base64Value =
-        item?.b64_json ||
-        item?.base64 ||
-        item?.image_base64 ||
-        item?.image ||
-        item?.content
-
-      if (typeof base64Value === 'string' && base64Value) {
-        return {
-          src: base64Value.startsWith('data:')
-            ? base64Value
-            : `data:${mimeType};base64,${base64Value}`,
-          mimeType,
-          revisedPrompt: item.revised_prompt || item.prompt || '',
-        }
-      }
-
-      return null
-    })
-    .filter(Boolean)
+  return collected
 }
 
 function detectMimeType(item, outputFormat) {
@@ -453,6 +430,140 @@ function detectMimeType(item, outputFormat) {
   }
 
   return `image/${format}`
+}
+
+function collectImageEntries(value, outputFormat, collected, seen, inheritedPrompt = '') {
+  if (!value) {
+    return
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((entry) => collectImageEntries(entry, outputFormat, collected, seen, inheritedPrompt))
+    return
+  }
+
+  if (typeof value === 'string') {
+    const src = normalizeImageSource(value, `image/${outputFormat || 'png'}`)
+    if (src && !seen.has(src)) {
+      seen.add(src)
+      collected.push({
+        src,
+        mimeType: detectMimeTypeFromSource(src, outputFormat),
+        revisedPrompt: inheritedPrompt,
+      })
+    }
+    return
+  }
+
+  if (typeof value !== 'object') {
+    return
+  }
+
+  const promptText =
+    value.revised_prompt ||
+    value.prompt ||
+    value.caption ||
+    value.description ||
+    inheritedPrompt
+
+  const mimeType = detectMimeType(value, outputFormat)
+
+  const candidateValues = [
+    value.url,
+    value.image_url,
+    value.signed_url,
+    value.download_url,
+    value.uri,
+    value.src,
+    value.b64_json,
+    value.base64,
+    value.image_base64,
+    value.image,
+    value.content,
+    value.data,
+    value.output,
+    value.result,
+    value.images,
+  ]
+
+  for (const candidate of candidateValues) {
+    if (typeof candidate === 'string') {
+      const src = normalizeImageSource(candidate, mimeType)
+      if (src && !seen.has(src)) {
+        seen.add(src)
+        collected.push({
+          src,
+          mimeType: detectMimeTypeFromSource(src, outputFormat) || mimeType,
+          revisedPrompt: promptText,
+        })
+      }
+    }
+  }
+
+  // Handle nested image_url objects such as { image_url: { url: "..." } }
+  if (typeof value.image_url === 'object' && value.image_url) {
+    collectImageEntries(value.image_url, outputFormat, collected, seen, promptText)
+  }
+
+  // Some providers return content arrays like [{ type: "image_url", image_url: {...} }]
+  for (const nestedKey of ['content', 'data', 'images', 'result', 'output']) {
+    if (value[nestedKey] && value[nestedKey] !== value) {
+      collectImageEntries(value[nestedKey], outputFormat, collected, seen, promptText)
+    }
+  }
+}
+
+function normalizeImageSource(value, mimeType) {
+  if (typeof value !== 'string' || !value) {
+    return ''
+  }
+
+  if (value.startsWith('data:image/')) {
+    return value
+  }
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return value
+  }
+
+  if (looksLikeBase64(value)) {
+    return `data:${mimeType};base64,${value}`
+  }
+
+  return ''
+}
+
+function looksLikeBase64(value) {
+  if (!value || value.length < 32) {
+    return false
+  }
+
+  return /^[A-Za-z0-9+/=\r\n]+$/.test(value)
+}
+
+function detectMimeTypeFromSource(src, fallbackFormat) {
+  if (!src) {
+    return ''
+  }
+
+  if (src.startsWith('data:image/')) {
+    const match = src.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,/)
+    return match?.[1] || ''
+  }
+
+  if (src.includes('.webp')) {
+    return 'image/webp'
+  }
+
+  if (src.includes('.jpeg') || src.includes('.jpg')) {
+    return 'image/jpeg'
+  }
+
+  if (src.includes('.png')) {
+    return 'image/png'
+  }
+
+  return fallbackFormat ? `image/${fallbackFormat}` : ''
 }
 
 function getLocalIpv4Addresses() {
