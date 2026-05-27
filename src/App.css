@@ -62,12 +62,33 @@
 }
 
 .hero-copy h1 {
-  max-width: 12ch;
+  max-width: 13ch;
 }
 
 .lede {
   max-width: 56ch;
   font-size: 1.05rem;
+}
+
+.mode-tabs {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.mode-tab {
+  border: 1px solid rgba(18, 52, 45, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--heading);
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+.mode-tab.active {
+  background: linear-gradient(135deg, #12342d, #0f766e);
+  color: #fffdf8;
 }
 
 .hero-notes {
@@ -171,7 +192,8 @@
 
 .generate-button:hover,
 .preset-chip:hover,
-.download-link:hover {
+.download-link:hover,
+.mode-tab:hover {
   transform: translateY(-1px);
 }
 
@@ -180,7 +202,8 @@
   cursor: wait;
 }
 
-.field-grid {
+.field-grid,
+.upload-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
@@ -246,6 +269,24 @@
   background: var(--chip-bg);
   color: var(--heading);
   border: 1px solid rgba(15, 118, 110, 0.16);
+}
+
+.upload-card {
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px dashed rgba(15, 118, 110, 0.25);
+  background: rgba(255, 255, 255, 0.52);
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.upload-card strong {
+  color: var(--heading);
+}
+
+.upload-card small {
+  color: var(--muted);
 }
 
 .request-meta {
@@ -369,7 +410,8 @@
     padding: 20px;
   }
 
-  .field-grid {
+  .field-grid,
+  .upload-grid {
     grid-template-columns: 1fr;
   }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import QRCode from 'qrcode'
 import './App.css'
 
@@ -9,14 +9,17 @@ const starterPrompts = [
 ]
 
 const fallbackForm = {
+  mode: 'generate',
   prompt: '',
-  model: 'gpt-image-1.5',
+  model: 'gpt-image-2',
   baseUrl: 'https://api.openai.com',
-  apiPath: '/v1/images/generations',
+  generatePath: '/v1/images/generations',
+  editPath: '/v1/images/edits',
   size: '1024x1024',
   quality: 'medium',
   background: 'auto',
   outputFormat: 'png',
+  moderation: 'auto',
   n: 1,
   extraBody: '',
 }
@@ -29,6 +32,8 @@ function App() {
   const [requestMeta, setRequestMeta] = useState(null)
   const [mobileAccess, setMobileAccess] = useState(null)
   const [qrDataUrl, setQrDataUrl] = useState('')
+  const [referenceFiles, setReferenceFiles] = useState([])
+  const [maskFile, setMaskFile] = useState(null)
 
   useEffect(() => {
     const loadDefaults = async () => {
@@ -43,8 +48,8 @@ function App() {
           ...current,
           model: data.defaults?.model || current.model,
           baseUrl: data.defaults?.baseUrl || current.baseUrl,
-          apiPath:
-            data.defaults?.generatePath || data.defaults?.apiPath || current.apiPath,
+          generatePath: data.defaults?.generatePath || current.generatePath,
+          editPath: data.defaults?.editPath || current.editPath,
         }))
 
         const firstIp = data.access?.localIps?.[0]
@@ -88,6 +93,11 @@ function App() {
     renderQr()
   }, [mobileAccess])
 
+  const modeLabel = useMemo(
+    () => (form.mode === 'edit' ? '开始改图' : isLoading ? '生成中...' : '开始生图'),
+    [form.mode, isLoading],
+  )
+
   const updateField = (event) => {
     const { name, value } = event.target
     setForm((current) => ({
@@ -100,30 +110,42 @@ function App() {
     setForm((current) => ({ ...current, prompt }))
   }
 
+  const switchMode = (mode) => {
+    setError('')
+    setForm((current) => ({ ...current, mode }))
+  }
+
+  const handleReferenceFiles = (event) => {
+    setReferenceFiles(Array.from(event.target.files || []))
+  }
+
+  const handleMaskFile = (event) => {
+    const [file] = Array.from(event.target.files || [])
+    setMaskFile(file || null)
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault()
     setError('')
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/generate-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(form),
-      })
+      const response =
+        form.mode === 'edit'
+          ? await submitEditRequest(form, referenceFiles, maskFile)
+          : await submitGenerateRequest(form)
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || '图片生成失败，请检查配置。')
+        throw new Error(data.error || '图片处理失败，请检查配置。')
       }
 
       setImages(data.images || [])
       setRequestMeta({
         model: data.model,
         baseUrl: data.baseUrl,
+        requestType: data.requestType || form.mode,
         createdAt: new Date().toLocaleString(),
       })
     } catch (submitError) {
@@ -140,25 +162,42 @@ function App() {
       <section className="hero-panel">
         <div className="hero-copy">
           <span className="eyebrow">GPT Image Studio</span>
-          <h1>把你买到的图片 API，变成一个真正能用的生图工作台。</h1>
+          <h1>不只生图，也能直接改图和局部重绘。</h1>
           <p className="lede">
-            这个前端默认走后端代理模式，浏览器不直接暴露 `API Key`。你可以自由改
-            `Base URL`、`model` 和附加参数，适配官方接口或第三方兼容接口。
+            现在支持 `Generate` 和 `Edit` 双模式。你可以上传原图、参考图和遮罩图，
+            直接从网页调用图片编辑接口。
           </p>
+
+          <div className="mode-tabs">
+            <button
+              type="button"
+              className={form.mode === 'generate' ? 'mode-tab active' : 'mode-tab'}
+              onClick={() => switchMode('generate')}
+            >
+              Generate
+            </button>
+            <button
+              type="button"
+              className={form.mode === 'edit' ? 'mode-tab active' : 'mode-tab'}
+              onClick={() => switchMode('edit')}
+            >
+              Edit / Inpaint
+            </button>
+          </div>
         </div>
 
         <div className="hero-notes">
           <div className="note-card">
             <strong>更安全</strong>
-            <span>密钥放在 `.env`，前端只传生成参数。</span>
+            <span>密钥放在 `.env`，前端只传生成或改图参数。</span>
           </div>
           <div className="note-card">
             <strong>更灵活</strong>
-            <span>支持自定义 `baseUrl`、`apiPath`、`model`。</span>
+            <span>支持 `generatePath` 和 `editPath` 分开配置。</span>
           </div>
           <div className="note-card">
-            <strong>更实用</strong>
-            <span>直接预览、下载图片，并显示失败原因。</span>
+            <strong>更完整</strong>
+            <span>现在可以上传参考图、原图和可选遮罩图做改图。</span>
           </div>
           {mobileAccess ? (
             <div className="qr-card">
@@ -176,11 +215,13 @@ function App() {
         <form className="control-panel" onSubmit={handleSubmit}>
           <div className="panel-header">
             <div>
-              <p className="panel-kicker">生成参数</p>
-              <h2>把请求配完整</h2>
+              <p className="panel-kicker">
+                {form.mode === 'edit' ? '改图参数' : '生成参数'}
+              </p>
+              <h2>{form.mode === 'edit' ? '上传图片并修改' : '把请求配完整'}</h2>
             </div>
             <button className="generate-button" type="submit" disabled={isLoading}>
-              {isLoading ? '生成中...' : '开始生图'}
+              {modeLabel}
             </button>
           </div>
 
@@ -189,7 +230,11 @@ function App() {
             <textarea
               name="prompt"
               rows="6"
-              placeholder="描述你想生成的图像内容、风格、镜头、光线、材质..."
+              placeholder={
+                form.mode === 'edit'
+                  ? '描述你想怎么改这张图，比如替换背景、补全主体、换风格、局部重绘...'
+                  : '描述你想生成的图像内容、风格、镜头、光线、材质...'
+              }
               value={form.prompt}
               onChange={updateField}
               required
@@ -216,7 +261,7 @@ function App() {
                 name="model"
                 value={form.model}
                 onChange={updateField}
-                placeholder="例如 gpt-image-1.5 或你的 gpt-image-2"
+                placeholder="例如 gpt-image-2"
               />
             </label>
 
@@ -231,12 +276,22 @@ function App() {
             </label>
 
             <label className="field">
-              <span>API Path</span>
+              <span>Generate Path</span>
               <input
-                name="apiPath"
-                value={form.apiPath}
+                name="generatePath"
+                value={form.generatePath}
                 onChange={updateField}
                 placeholder="/v1/images/generations"
+              />
+            </label>
+
+            <label className="field">
+              <span>Edit Path</span>
+              <input
+                name="editPath"
+                value={form.editPath}
+                onChange={updateField}
+                placeholder="/v1/images/edits"
               />
             </label>
 
@@ -269,6 +324,14 @@ function App() {
             </label>
 
             <label className="field">
+              <span>Moderation</span>
+              <select name="moderation" value={form.moderation} onChange={updateField}>
+                <option value="auto">auto</option>
+                <option value="low">low</option>
+              </select>
+            </label>
+
+            <label className="field">
               <span>Output</span>
               <select name="outputFormat" value={form.outputFormat} onChange={updateField}>
                 <option value="png">png</option>
@@ -290,6 +353,28 @@ function App() {
             </label>
           </div>
 
+          {form.mode === 'edit' ? (
+            <div className="upload-grid">
+              <label className="upload-card">
+                <span>原图 / 参考图</span>
+                <input type="file" accept="image/*" multiple onChange={handleReferenceFiles} />
+                <strong>
+                  {referenceFiles.length
+                    ? `已选择 ${referenceFiles.length} 张图片`
+                    : '选择一张或多张图片'}
+                </strong>
+                <small>至少上传一张图。多图时会一起作为参考输入。</small>
+              </label>
+
+              <label className="upload-card">
+                <span>Mask 遮罩图</span>
+                <input type="file" accept="image/*" onChange={handleMaskFile} />
+                <strong>{maskFile ? maskFile.name : '可选：上传局部重绘遮罩'}</strong>
+                <small>透明区域通常表示允许模型重绘的位置。</small>
+              </label>
+            </div>
+          ) : null}
+
           <label className="field field-wide">
             <span>附加 JSON 参数</span>
             <textarea
@@ -307,12 +392,15 @@ function App() {
         <section className="preview-panel">
           <div className="panel-header">
             <div>
-              <p className="panel-kicker">生成结果</p>
+              <p className="panel-kicker">
+                {form.mode === 'edit' ? '改图结果' : '生成结果'}
+              </p>
               <h2>预览与下载</h2>
             </div>
             {requestMeta ? (
               <div className="request-meta">
                 <span>{requestMeta.model}</span>
+                <span>{requestMeta.requestType}</span>
                 <span>{requestMeta.createdAt}</span>
               </div>
             ) : null}
@@ -320,8 +408,16 @@ function App() {
 
           {images.length === 0 ? (
             <div className="empty-state">
-              <p>生成成功后，图片会显示在这里。</p>
-              <p>如果你用的是第三方兼容接口，可以先把 `model` 改成商家给你的模型名。</p>
+              <p>
+                {form.mode === 'edit'
+                  ? '上传参考图后，编辑结果会显示在这里。'
+                  : '生成成功后，图片会显示在这里。'}
+              </p>
+              <p>
+                {form.mode === 'edit'
+                  ? '如果改图失败，通常优先检查 editPath、字段名和你的第三方接口兼容性。'
+                  : '如果你用的是第三方兼容接口，可以先把 model 改成商家给你的模型名。'}
+              </p>
             </div>
           ) : (
             <div className="gallery">
@@ -354,6 +450,44 @@ function App() {
       </section>
     </main>
   )
+}
+
+async function submitGenerateRequest(form) {
+  return fetch('/api/generate-image', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(form),
+  })
+}
+
+async function submitEditRequest(form, referenceFiles, maskFile) {
+  const body = new FormData()
+  body.set('prompt', form.prompt)
+  body.set('model', form.model)
+  body.set('baseUrl', form.baseUrl)
+  body.set('editPath', form.editPath)
+  body.set('size', form.size)
+  body.set('quality', form.quality)
+  body.set('background', form.background)
+  body.set('moderation', form.moderation)
+  body.set('outputFormat', form.outputFormat)
+  body.set('n', String(form.n))
+  body.set('extraBody', form.extraBody)
+
+  referenceFiles.forEach((file) => {
+    body.append('imageFiles', file)
+  })
+
+  if (maskFile) {
+    body.set('maskFile', maskFile)
+  }
+
+  return fetch('/api/edit-image', {
+    method: 'POST',
+    body,
+  })
 }
 
 export default App
