@@ -1,0 +1,16 @@
+version: 1.0
+runtime: nodejs24
+build:
+  commands:
+    build:
+      - npm ci
+      - npm run build
+run:
+  runtime-version: 24
+  command: npm start
+  network:
+    port: 8787
+    env: PORT
+  env:
+    - name: NODE_ENV
+      value: production
