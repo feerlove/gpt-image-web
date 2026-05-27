@@ -135,7 +135,7 @@ function App() {
           ? await submitEditRequest(form, referenceFiles, maskFile)
           : await submitGenerateRequest(form)
 
-      const data = await response.json()
+      const data = await parseApiResponse(response)
 
       if (!response.ok) {
         throw new Error(data.error || '图片处理失败，请检查配置。')
@@ -488,6 +488,38 @@ async function submitEditRequest(form, referenceFiles, maskFile) {
     method: 'POST',
     body,
   })
+}
+
+async function parseApiResponse(response) {
+  const text = await response.text()
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    if (!response.ok) {
+      return {
+        error: summarizeHtmlError(text, response.status),
+      }
+    }
+
+    throw new Error('服务返回了非 JSON 响应。')
+  }
+}
+
+function summarizeHtmlError(text, status) {
+  if (text.includes('504 Gateway Time-out') || status === 504) {
+    return '改图请求超时了。你的第三方图片编辑接口响应太慢，服务器已经在等待过程中断开。'
+  }
+
+  if (text.includes('413 Request Entity Too Large') || status === 413) {
+    return '上传的图片太大，服务器拒绝了这次请求。请缩小图片后重试。'
+  }
+
+  if (text.includes('502 Bad Gateway') || status === 502) {
+    return '上游图片编辑接口没有正常返回结果，请稍后再试。'
+  }
+
+  return `服务返回了非 JSON 错误页面，状态码 ${status}。`
 }
 
 export default App
