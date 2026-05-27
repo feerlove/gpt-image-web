@@ -1,45 +1,24 @@
 .page-shell {
   min-height: 100vh;
-  padding: 40px 24px 56px;
+  padding: 28px 18px 40px;
 }
 
-.hero-panel,
+.compact-hero,
 .workspace {
-  width: min(1240px, 100%);
+  width: min(1160px, 100%);
   margin: 0 auto;
 }
 
-.hero-panel {
+.compact-hero {
   display: grid;
-  grid-template-columns: 1.35fr 0.95fr;
-  gap: 24px;
-  margin-bottom: 24px;
-}
-
-.hero-copy,
-.hero-notes,
-.control-panel,
-.preview-panel {
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 18px;
+  margin-bottom: 18px;
+  padding: 26px;
   border: 1px solid var(--border);
   border-radius: 28px;
   background: var(--panel);
   box-shadow: var(--shadow);
-}
-
-.hero-copy {
-  padding: 36px;
-  position: relative;
-  overflow: hidden;
-}
-
-.hero-copy::after {
-  content: '';
-  position: absolute;
-  inset: auto -60px -80px auto;
-  width: 240px;
-  height: 240px;
-  background: radial-gradient(circle, rgba(255, 130, 92, 0.35), transparent 70%);
-  pointer-events: none;
 }
 
 .eyebrow,
@@ -47,7 +26,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   color: var(--muted);
@@ -61,26 +40,27 @@
   background: currentColor;
 }
 
-.hero-copy h1 {
-  max-width: 13ch;
+.lede {
+  max-width: 52ch;
+  font-size: 1rem;
 }
 
-.lede {
-  max-width: 56ch;
-  font-size: 1.05rem;
+.hero-side {
+  display: grid;
+  gap: 14px;
+  align-content: start;
 }
 
 .mode-tabs {
   display: flex;
-  gap: 12px;
-  margin-top: 24px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .mode-tab {
   border: 1px solid rgba(18, 52, 45, 0.16);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.78);
   color: var(--heading);
   padding: 10px 16px;
   cursor: pointer;
@@ -91,79 +71,62 @@
   color: #fffdf8;
 }
 
-.hero-notes {
-  padding: 22px;
-  display: grid;
-  gap: 16px;
-  background:
-    linear-gradient(135deg, rgba(255, 244, 229, 0.92), rgba(224, 242, 238, 0.84)),
-    var(--panel);
+.mini-qr-card,
+.control-panel,
+.preview-panel {
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
 }
 
-.note-card {
-  padding: 18px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.66);
-  border: 1px solid rgba(18, 52, 45, 0.1);
-  display: grid;
-  gap: 6px;
+.mini-qr-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
 }
 
-.note-card strong {
+.mini-qr-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.mini-qr-copy strong {
   color: var(--heading);
-  font-size: 1rem;
 }
 
-.qr-card {
-  display: grid;
-  gap: 14px;
-  padding: 18px;
-  border-radius: 20px;
-  background: rgba(18, 52, 45, 0.92);
-  color: #fff8ef;
-}
-
-.qr-copy {
-  display: grid;
-  gap: 6px;
-}
-
-.qr-copy strong {
-  color: #fff8ef;
-}
-
-.qr-copy span {
+.mini-qr-copy span {
+  font-size: 0.85rem;
+  color: var(--muted);
   word-break: break-all;
-  color: rgba(255, 248, 239, 0.8);
-  font-size: 0.88rem;
 }
 
-.qr-card img {
-  width: 180px;
-  max-width: 100%;
-  border-radius: 16px;
+.mini-qr-card img {
+  width: 92px;
+  border-radius: 12px;
   background: #fffdf8;
-  padding: 10px;
+  padding: 6px;
 }
 
 .workspace {
   display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 18px;
   align-items: start;
 }
 
 .control-panel,
 .preview-panel {
-  padding: 26px;
+  padding: 22px;
 }
 
 .panel-header {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
   align-items: start;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .panel-header h2 {
@@ -183,7 +146,7 @@
 }
 
 .generate-button {
-  padding: 14px 22px;
+  padding: 14px 20px;
   background: linear-gradient(135deg, #0f766e, #f97316);
   color: #fff8ef;
   font-weight: 700;
@@ -202,25 +165,20 @@
   cursor: wait;
 }
 
-.field-grid,
-.upload-grid {
+.field,
+.upload-card {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.field {
-  display: grid;
-  gap: 10px;
-  margin-bottom: 18px;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .field-wide {
   grid-column: 1 / -1;
 }
 
-.field span {
-  font-size: 0.92rem;
+.field span,
+.upload-card span {
+  font-size: 0.9rem;
   color: var(--heading);
   font-weight: 700;
 }
@@ -232,15 +190,11 @@
   box-sizing: border-box;
   border: 1px solid var(--input-border);
   background: var(--input-bg);
-  border-radius: 18px;
-  padding: 14px 16px;
+  border-radius: 16px;
+  padding: 13px 15px;
   color: var(--heading);
   font: inherit;
   outline: none;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    background 160ms ease;
 }
 
 .field input:focus,
@@ -253,32 +207,37 @@
 
 .field textarea {
   resize: vertical;
-  min-height: 128px;
+  min-height: 112px;
 }
 
 .prompt-presets {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 22px;
+  gap: 8px;
+  margin-bottom: 18px;
 }
 
 .preset-chip {
-  padding: 10px 14px;
+  padding: 9px 12px;
   text-align: left;
   background: var(--chip-bg);
   color: var(--heading);
   border: 1px solid rgba(15, 118, 110, 0.16);
 }
 
+.quick-grid,
+.field-grid,
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
 .upload-card {
-  padding: 18px;
-  border-radius: 22px;
+  padding: 16px;
+  border-radius: 18px;
   border: 1px dashed rgba(15, 118, 110, 0.25);
   background: rgba(255, 255, 255, 0.52);
-  display: grid;
-  gap: 10px;
-  margin-bottom: 18px;
 }
 
 .upload-card strong {
@@ -289,21 +248,40 @@
   color: var(--muted);
 }
 
+.advanced-panel {
+  margin-top: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px dashed rgba(18, 52, 45, 0.16);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.advanced-panel summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--heading);
+  margin-bottom: 14px;
+}
+
+.advanced-panel[open] summary {
+  margin-bottom: 16px;
+}
+
 .request-meta {
   display: grid;
-  gap: 6px;
-  font-size: 0.86rem;
+  gap: 4px;
+  font-size: 0.84rem;
   color: var(--muted);
   text-align: right;
 }
 
 .empty-state {
-  min-height: 420px;
-  border-radius: 22px;
+  min-height: 340px;
+  border-radius: 20px;
   display: grid;
   place-content: center;
   gap: 10px;
-  padding: 32px;
+  padding: 28px;
   text-align: center;
   background:
     linear-gradient(135deg, rgba(255, 247, 237, 0.9), rgba(236, 253, 245, 0.92)),
@@ -313,11 +291,11 @@
 
 .gallery {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .image-card {
-  border-radius: 24px;
+  border-radius: 22px;
   overflow: hidden;
   background: #fffdf8;
   border: 1px solid rgba(18, 52, 45, 0.08);
@@ -334,8 +312,8 @@
 .image-card-footer {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
-  padding: 16px 18px 12px;
+  gap: 14px;
+  padding: 15px 16px 12px;
   align-items: center;
 }
 
@@ -349,7 +327,6 @@
 }
 
 .image-copy span,
-.revised-prompt,
 .status-message {
   color: var(--muted);
 }
@@ -364,14 +341,8 @@
   background: #12342d;
 }
 
-.revised-prompt {
-  margin: 0;
-  padding: 0 18px 18px;
-  font-size: 0.92rem;
-}
-
 .status-message {
-  margin: 6px 0 0;
+  margin: 12px 0 0;
   padding: 14px 16px;
   border-radius: 16px;
 }
@@ -382,41 +353,33 @@
 }
 
 @media (max-width: 1080px) {
-  .hero-panel,
+  .compact-hero,
   .workspace {
     grid-template-columns: 1fr;
-  }
-
-  .hero-copy h1 {
-    max-width: none;
   }
 }
 
 @media (max-width: 720px) {
   .page-shell {
-    padding: 18px 14px 32px;
+    padding: 14px 12px 28px;
   }
 
-  .hero-copy,
-  .hero-notes,
+  .compact-hero,
   .control-panel,
   .preview-panel {
-    border-radius: 22px;
+    padding: 18px;
+    border-radius: 20px;
   }
 
-  .hero-copy,
-  .control-panel,
-  .preview-panel {
-    padding: 20px;
-  }
-
+  .quick-grid,
   .field-grid,
   .upload-grid {
     grid-template-columns: 1fr;
   }
 
   .panel-header,
-  .image-card-footer {
+  .image-card-footer,
+  .mini-qr-card {
     flex-direction: column;
     align-items: stretch;
   }
@@ -426,11 +389,8 @@
   }
 
   .generate-button,
-  .download-link {
+  .download-link,
+  .mode-tab {
     width: 100%;
-  }
-
-  .qr-card img {
-    width: 150px;
   }
 }

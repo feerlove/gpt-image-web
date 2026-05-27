@@ -54,10 +54,8 @@ function App() {
 
         const firstIp = data.access?.localIps?.[0]
         if (firstIp) {
-          const devUrl = `http://${firstIp}:${data.access?.devPort || 5173}`
           setMobileAccess({
-            ip: firstIp,
-            devUrl,
+            devUrl: `http://${firstIp}:${data.access?.devPort || 5173}`,
           })
         }
       } catch {
@@ -78,7 +76,7 @@ function App() {
       try {
         const next = await QRCode.toDataURL(mobileAccess.devUrl, {
           margin: 1,
-          width: 220,
+          width: 180,
           color: {
             dark: '#12342d',
             light: '#fffdf8',
@@ -93,10 +91,13 @@ function App() {
     renderQr()
   }, [mobileAccess])
 
-  const modeLabel = useMemo(
-    () => (form.mode === 'edit' ? '开始改图' : isLoading ? '生成中...' : '开始生图'),
-    [form.mode, isLoading],
-  )
+  const modeLabel = useMemo(() => {
+    if (isLoading) {
+      return form.mode === 'edit' ? '改图中...' : '生成中...'
+    }
+
+    return form.mode === 'edit' ? '开始改图' : '开始生图'
+  }, [form.mode, isLoading])
 
   const updateField = (event) => {
     const { name, value } = event.target
@@ -144,7 +145,6 @@ function App() {
       setImages(data.images || [])
       setRequestMeta({
         model: data.model,
-        baseUrl: data.baseUrl,
         requestType: data.requestType || form.mode,
         createdAt: new Date().toLocaleString(),
       })
@@ -159,53 +159,40 @@ function App() {
 
   return (
     <main className="page-shell">
-      <section className="hero-panel">
-        <div className="hero-copy">
+      <section className="compact-hero">
+        <div>
           <span className="eyebrow">GPT Image Studio</span>
-          <h1>不只生图，也能直接改图和局部重绘。</h1>
+          <h1>把页面收紧，只保留真正常用的功能。</h1>
           <p className="lede">
-            现在支持 `Generate` 和 `Edit` 双模式。你可以上传原图、参考图和遮罩图，
-            直接从网页调用图片编辑接口。
+            现在首屏只保留生图、改图、上传、预览和开始按钮。其他参数都收进高级设置。
           </p>
+        </div>
 
+        <div className="hero-side">
           <div className="mode-tabs">
             <button
               type="button"
               className={form.mode === 'generate' ? 'mode-tab active' : 'mode-tab'}
               onClick={() => switchMode('generate')}
             >
-              Generate
+              生图
             </button>
             <button
               type="button"
               className={form.mode === 'edit' ? 'mode-tab active' : 'mode-tab'}
               onClick={() => switchMode('edit')}
             >
-              Edit / Inpaint
+              改图
             </button>
           </div>
-        </div>
 
-        <div className="hero-notes">
-          <div className="note-card">
-            <strong>更安全</strong>
-            <span>密钥放在 `.env`，前端只传生成或改图参数。</span>
-          </div>
-          <div className="note-card">
-            <strong>更灵活</strong>
-            <span>支持 `generatePath` 和 `editPath` 分开配置。</span>
-          </div>
-          <div className="note-card">
-            <strong>更完整</strong>
-            <span>现在可以上传参考图、原图和可选遮罩图做改图。</span>
-          </div>
-          {mobileAccess ? (
-            <div className="qr-card">
-              <div className="qr-copy">
-                <strong>手机扫码打开</strong>
+          {mobileAccess && qrDataUrl ? (
+            <div className="mini-qr-card">
+              <div className="mini-qr-copy">
+                <strong>手机扫码</strong>
                 <span>{mobileAccess.devUrl}</span>
               </div>
-              {qrDataUrl ? <img src={qrDataUrl} alt="Mobile access QR code" /> : null}
+              <img src={qrDataUrl} alt="Mobile access QR code" />
             </div>
           ) : null}
         </div>
@@ -215,10 +202,8 @@ function App() {
         <form className="control-panel" onSubmit={handleSubmit}>
           <div className="panel-header">
             <div>
-              <p className="panel-kicker">
-                {form.mode === 'edit' ? '改图参数' : '生成参数'}
-              </p>
-              <h2>{form.mode === 'edit' ? '上传图片并修改' : '把请求配完整'}</h2>
+              <p className="panel-kicker">{form.mode === 'edit' ? '改图' : '生图'}</p>
+              <h2>{form.mode === 'edit' ? '上传并修改' : '输入并生成'}</h2>
             </div>
             <button className="generate-button" type="submit" disabled={isLoading}>
               {modeLabel}
@@ -229,10 +214,10 @@ function App() {
             <span>Prompt</span>
             <textarea
               name="prompt"
-              rows="6"
+              rows="5"
               placeholder={
                 form.mode === 'edit'
-                  ? '描述你想怎么改这张图，比如替换背景、补全主体、换风格、局部重绘...'
+                  ? '描述你想怎么改图，比如换背景、补全人物、换风格、局部重绘...'
                   : '描述你想生成的图像内容、风格、镜头、光线、材质...'
               }
               value={form.prompt}
@@ -254,102 +239,19 @@ function App() {
             ))}
           </div>
 
-          <div className="field-grid">
+          <div className="quick-grid">
             <label className="field">
               <span>Model</span>
-              <input
-                name="model"
-                value={form.model}
-                onChange={updateField}
-                placeholder="例如 gpt-image-2"
-              />
+              <input name="model" value={form.model} onChange={updateField} />
             </label>
 
             <label className="field">
-              <span>Base URL</span>
-              <input
-                name="baseUrl"
-                value={form.baseUrl}
-                onChange={updateField}
-                placeholder="https://api.openai.com"
-              />
-            </label>
-
-            <label className="field">
-              <span>Generate Path</span>
-              <input
-                name="generatePath"
-                value={form.generatePath}
-                onChange={updateField}
-                placeholder="/v1/images/generations"
-              />
-            </label>
-
-            <label className="field">
-              <span>Edit Path</span>
-              <input
-                name="editPath"
-                value={form.editPath}
-                onChange={updateField}
-                placeholder="/v1/images/edits"
-              />
-            </label>
-
-            <label className="field">
-              <span>Size</span>
+              <span>尺寸</span>
               <select name="size" value={form.size} onChange={updateField}>
                 <option value="1024x1024">1024 x 1024</option>
                 <option value="1536x1024">1536 x 1024</option>
                 <option value="1024x1536">1024 x 1536</option>
               </select>
-            </label>
-
-            <label className="field">
-              <span>Quality</span>
-              <select name="quality" value={form.quality} onChange={updateField}>
-                <option value="low">low</option>
-                <option value="medium">medium</option>
-                <option value="high">high</option>
-                <option value="auto">auto</option>
-              </select>
-            </label>
-
-            <label className="field">
-              <span>Background</span>
-              <select name="background" value={form.background} onChange={updateField}>
-                <option value="auto">auto</option>
-                <option value="transparent">transparent</option>
-                <option value="opaque">opaque</option>
-              </select>
-            </label>
-
-            <label className="field">
-              <span>Moderation</span>
-              <select name="moderation" value={form.moderation} onChange={updateField}>
-                <option value="auto">auto</option>
-                <option value="low">low</option>
-              </select>
-            </label>
-
-            <label className="field">
-              <span>Output</span>
-              <select name="outputFormat" value={form.outputFormat} onChange={updateField}>
-                <option value="png">png</option>
-                <option value="jpeg">jpeg</option>
-                <option value="webp">webp</option>
-              </select>
-            </label>
-
-            <label className="field">
-              <span>数量</span>
-              <input
-                name="n"
-                type="number"
-                min="1"
-                max="4"
-                value={form.n}
-                onChange={updateField}
-              />
             </label>
           </div>
 
@@ -361,30 +263,99 @@ function App() {
                 <strong>
                   {referenceFiles.length
                     ? `已选择 ${referenceFiles.length} 张图片`
-                    : '选择一张或多张图片'}
+                    : '选择图片'}
                 </strong>
-                <small>至少上传一张图。多图时会一起作为参考输入。</small>
+                <small>至少上传一张。多图会一起作为参考输入。</small>
               </label>
 
               <label className="upload-card">
                 <span>Mask 遮罩图</span>
                 <input type="file" accept="image/*" onChange={handleMaskFile} />
-                <strong>{maskFile ? maskFile.name : '可选：上传局部重绘遮罩'}</strong>
-                <small>透明区域通常表示允许模型重绘的位置。</small>
+                <strong>{maskFile ? maskFile.name : '可选：上传遮罩'}</strong>
+                <small>透明区域一般表示允许重绘的位置。</small>
               </label>
             </div>
           ) : null}
 
-          <label className="field field-wide">
-            <span>附加 JSON 参数</span>
-            <textarea
-              name="extraBody"
-              rows="5"
-              placeholder='比如：{"response_format":"b64_json","style":"cinematic"}'
-              value={form.extraBody}
-              onChange={updateField}
-            />
-          </label>
+          <details className="advanced-panel">
+            <summary>高级设置</summary>
+
+            <div className="field-grid">
+              <label className="field">
+                <span>Quality</span>
+                <select name="quality" value={form.quality} onChange={updateField}>
+                  <option value="low">low</option>
+                  <option value="medium">medium</option>
+                  <option value="high">high</option>
+                  <option value="auto">auto</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>Background</span>
+                <select name="background" value={form.background} onChange={updateField}>
+                  <option value="auto">auto</option>
+                  <option value="transparent">transparent</option>
+                  <option value="opaque">opaque</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>Output</span>
+                <select name="outputFormat" value={form.outputFormat} onChange={updateField}>
+                  <option value="png">png</option>
+                  <option value="jpeg">jpeg</option>
+                  <option value="webp">webp</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>数量</span>
+                <input
+                  name="n"
+                  type="number"
+                  min="1"
+                  max="4"
+                  value={form.n}
+                  onChange={updateField}
+                />
+              </label>
+
+              <label className="field">
+                <span>Moderation</span>
+                <select name="moderation" value={form.moderation} onChange={updateField}>
+                  <option value="auto">auto</option>
+                  <option value="low">low</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>Base URL</span>
+                <input name="baseUrl" value={form.baseUrl} onChange={updateField} />
+              </label>
+
+              <label className="field">
+                <span>Generate Path</span>
+                <input name="generatePath" value={form.generatePath} onChange={updateField} />
+              </label>
+
+              <label className="field">
+                <span>Edit Path</span>
+                <input name="editPath" value={form.editPath} onChange={updateField} />
+              </label>
+            </div>
+
+            <label className="field field-wide">
+              <span>附加 JSON 参数</span>
+              <textarea
+                name="extraBody"
+                rows="4"
+                placeholder='比如：{"response_format":"b64_json","style":"cinematic"}'
+                value={form.extraBody}
+                onChange={updateField}
+              />
+            </label>
+          </details>
 
           {error ? <p className="status-message error">{error}</p> : null}
         </form>
@@ -392,9 +363,7 @@ function App() {
         <section className="preview-panel">
           <div className="panel-header">
             <div>
-              <p className="panel-kicker">
-                {form.mode === 'edit' ? '改图结果' : '生成结果'}
-              </p>
+              <p className="panel-kicker">{form.mode === 'edit' ? '改图结果' : '生成结果'}</p>
               <h2>预览与下载</h2>
             </div>
             {requestMeta ? (
@@ -410,14 +379,10 @@ function App() {
             <div className="empty-state">
               <p>
                 {form.mode === 'edit'
-                  ? '上传参考图后，编辑结果会显示在这里。'
+                  ? '上传图片后，改图结果会显示在这里。'
                   : '生成成功后，图片会显示在这里。'}
               </p>
-              <p>
-                {form.mode === 'edit'
-                  ? '如果改图失败，通常优先检查 editPath、字段名和你的第三方接口兼容性。'
-                  : '如果你用的是第三方兼容接口，可以先把 model 改成商家给你的模型名。'}
-              </p>
+              <p>高级参数都已经收进“高级设置”里了。</p>
             </div>
           ) : (
             <div className="gallery">
@@ -439,9 +404,6 @@ function App() {
                       下载
                     </a>
                   </div>
-                  {image.revisedPrompt ? (
-                    <p className="revised-prompt">{image.revisedPrompt}</p>
-                  ) : null}
                 </article>
               ))}
             </div>
