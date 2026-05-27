@@ -6,18 +6,18 @@
 - 多参考图编辑
 - 局部重绘 / Inpaint
 - 手机浏览器访问
-- AWS / Vercel / 宝塔部署
+- EC2 / Vercel / 宝塔部署
 
 ## 我建议的上线方式
 
-如果你已经有 AWS，最推荐直接用 `AWS App Runner`。
+如果你现在要走 AWS，优先推荐 `EC2`。
 
-原因很简单：
+原因：
 
-- 这个项目有 `Express` 后端代理
-- 还支持图片上传和 `multipart/form-data`
-- App Runner 很适合这种“一整个 Node Web 服务”的项目
-- 比把它拆成纯静态页 + Serverless 接口更省心
+- 你已经能进入 `EC2`
+- 这个项目是完整的 `Node + Express + React` 应用
+- `EC2` 对这类项目最直接
+- 不依赖 `App Runner` 资格
 
 ## 本地开发
 
@@ -34,7 +34,7 @@ npm run dev
 
 ## 环境变量
 
-`.env.example` 只是模板，真实密钥请放在 `.env` 或云平台环境变量里。
+`.env.example` 只是模板，真实密钥请放在 `.env` 或服务器环境变量里。
 
 ```env
 OPENAI_API_KEY=你的密钥
@@ -45,70 +45,120 @@ IMAGE_MODEL=gpt-image-2
 PORT=8787
 ```
 
-## 部署到 AWS App Runner
+## 部署到 AWS EC2
 
-项目已经带了 [Dockerfile](E:\Users\cbb52\Documents\转录组代谢组聊天\gpt-image-web\Dockerfile)，可以直接走容器部署。
-也已经带了 [apprunner.yaml](E:\Users\cbb52\Documents\转录组代谢组聊天\gpt-image-web\apprunner.yaml)，可以让 App Runner 直接按源码构建。
+推荐系统：
 
-### 路线
+- `Ubuntu 24.04 LTS`
 
-1. 把项目上传到 GitHub
-2. 在 AWS 创建 `ECR` 仓库，或者直接让 App Runner 从源码构建
-3. 在 `App Runner` 创建服务
-4. 配置环境变量
-5. 等待部署完成，拿到公网域名
+推荐实例：
 
-### 推荐环境变量
+- `t3.micro`
 
-- `OPENAI_API_KEY`
-- `OPENAI_BASE_URL`
-- `IMAGE_API_PATH`
-- `IMAGE_EDIT_PATH`
-- `IMAGE_MODEL`
-- `PORT=8787`
-
-### 如果你想本地先做镜像测试
+### 服务器初始化
 
 ```bash
-docker build -t gpt-image-web .
-docker run -p 8787:8787 --env-file .env gpt-image-web
+sudo apt update
+sudo apt install -y nginx git
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+sudo apt install -y nodejs
+sudo npm install -g pm2
 ```
 
-然后浏览器打开：
-
-```text
-http://localhost:8787
-```
-
-## 部署到 Vercel
-
-项目已带 [vercel.json](E:\Users\cbb52\Documents\转录组代谢组聊天\gpt-image-web\vercel.json)，可以用，但我仍然更推荐 AWS。
-
-适合场景：
-
-- 你想最快拿到一个公网地址
-- 上传编辑流量不大
-- 你更熟悉前端平台部署
-
-## 部署到宝塔
-
-如果你自己有云服务器，也可以直接宝塔跑 Node：
+### 拉代码
 
 ```bash
-npm install && npm run build && npm start
+git clone https://github.com/feerlove/gpt-image-web.git
+cd gpt-image-web
+npm install
+cp .env.example .env
 ```
 
-然后把域名反代到：
+然后编辑 `.env`，填入你的真实密钥和接口地址。
+
+### 构建并启动
+
+```bash
+npm run build
+pm2 start ecosystem.config.cjs
+pm2 save
+pm2 startup
+```
+
+项目会监听：
 
 ```text
 127.0.0.1:8787
 ```
 
+### Nginx 反向代理
+
+把域名或公网 IP 反代到 `8787`。
+
+示例配置：
+
+```nginx
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://127.0.0.1:8787;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+启用：
+
+```bash
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo tee /etc/nginx/sites-available/gpt-image-web >/dev/null <<'EOF'
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://127.0.0.1:8787;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+EOF
+sudo ln -s /etc/nginx/sites-available/gpt-image-web /etc/nginx/sites-enabled/gpt-image-web
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+## 用 PM2 运行
+
+项目已带 [ecosystem.config.cjs](E:\Users\cbb52\Documents\转录组代谢组聊天\gpt-image-web\ecosystem.config.cjs)。
+
+常用命令：
+
+```bash
+pm2 start ecosystem.config.cjs
+pm2 restart gpt-image-web
+pm2 logs gpt-image-web
+pm2 status
+```
+
+## 部署到 Vercel
+
+项目也带 [vercel.json](E:\Users\cbb52\Documents\转录组代谢组聊天\gpt-image-web\vercel.json)，可以作为备选。
+
 ## 手机访问
 
 ### 同一 Wi-Fi
 
-直接访问电脑局域网地址，比如：
+访问电脑局域网地址，例如：
 
 ```text
 http://10.21.68.19:5173
@@ -116,12 +166,11 @@ http://10.21.68.19:5173
 
 ### 不同网络
 
-必须使用公网部署地址，或者内网穿透地址。
+需要公网部署地址，例如：
 
-也就是说：
-
-- 本地开发地址只能局域网访问
-- AWS / Vercel / 宝塔上线后，手机 4G/5G 也能访问
+- EC2 公网 IP
+- 域名
+- Vercel 地址
 
 ## 接口
 
