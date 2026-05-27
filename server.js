@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import dotenv from 'dotenv'
 import express from 'express'
 import multer from 'multer'
+import process from 'node:process'
 
 dotenv.config()
 
@@ -289,16 +290,27 @@ async function forwardMultipartRequest({
   outputFormat,
 }) {
   try {
-    const upstream = await fetch(endpoint.url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: formData,
-    })
+    const attempts = buildMultipartAttempts(formData)
+    let upstream = null
+    let rawText = ''
+    let result = null
 
-    const rawText = await upstream.text()
-    const result = safeJsonParse(rawText)
+    for (const attempt of attempts) {
+      upstream = await fetch(endpoint.url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: attempt,
+      })
+
+      rawText = await upstream.text()
+      result = safeJsonParse(rawText)
+
+      if (upstream.ok || !shouldRetryMultipartShape(upstream.status, result)) {
+        break
+      }
+    }
 
     await handleUpstreamResponse({
       response,
@@ -314,6 +326,65 @@ async function forwardMultipartRequest({
       error: error instanceof Error ? error.message : '上传图片并请求编辑时发生错误。',
     })
   }
+}
+
+function buildMultipartAttempts(sourceFormData) {
+  const files = []
+  const fields = []
+
+  for (const [key, value] of sourceFormData.entries()) {
+    if (value instanceof File || value instanceof Blob) {
+      files.push({
+        key,
+        value,
+        filename: value instanceof File ? value.name : undefined,
+      })
+      continue
+    }
+
+    fields.push([key, value])
+  }
+
+  const primary = createFormDataAttempt(fields, files, 'image[]')
+  const secondary = createFormDataAttempt(fields, files, 'image')
+
+  return [primary, secondary]
+}
+
+function createFormDataAttempt(fields, files, imageFieldName) {
+  const formData = new FormData()
+
+  fields.forEach(([key, value]) => {
+    formData.append(key, value)
+  })
+
+  files.forEach((entry) => {
+    if (entry.key === 'mask') {
+      formData.set('mask', entry.value, entry.filename)
+      return
+    }
+
+    formData.append(imageFieldName, entry.value, entry.filename)
+  })
+
+  return formData
+}
+
+function shouldRetryMultipartShape(status, result) {
+  if (![400, 415, 422].includes(status)) {
+    return false
+  }
+
+  const message = `${extractErrorMessage(result)} ${JSON.stringify(result || {})}`.toLowerCase()
+
+  return (
+    message.includes('image[]') ||
+    message.includes('image field') ||
+    message.includes('missing image') ||
+    message.includes('invalid image') ||
+    message.includes('unsupported') ||
+    message.includes('multipart')
+  )
 }
 
 async function handleUpstreamResponse({

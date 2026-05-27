@@ -1,23 +1,25 @@
 .page-shell {
   min-height: 100vh;
-  padding: 28px 18px 40px;
+  padding: 24px 16px 34px;
 }
 
 .compact-hero,
 .workspace {
-  width: min(1160px, 100%);
+  width: min(1220px, 100%);
   margin: 0 auto;
 }
 
 .compact-hero {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: 1.15fr 0.85fr;
   gap: 18px;
   margin-bottom: 18px;
-  padding: 26px;
+  padding: 24px;
   border: 1px solid var(--border);
   border-radius: 28px;
-  background: var(--panel);
+  background:
+    radial-gradient(circle at top left, rgba(249, 115, 22, 0.1), transparent 34%),
+    linear-gradient(135deg, rgba(255, 250, 245, 0.96), rgba(244, 252, 248, 0.98));
   box-shadow: var(--shadow);
 }
 
@@ -40,8 +42,12 @@
   background: currentColor;
 }
 
+.compact-hero h1 {
+  margin-bottom: 10px;
+}
+
 .lede {
-  max-width: 52ch;
+  max-width: 54ch;
   font-size: 1rem;
 }
 
@@ -64,6 +70,10 @@
   color: var(--heading);
   padding: 10px 16px;
   cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
 }
 
 .mode-tab.active {
@@ -111,14 +121,14 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  grid-template-columns: minmax(0, 0.96fr) minmax(320px, 1.04fr);
   gap: 18px;
   align-items: start;
 }
 
 .control-panel,
 .preview-panel {
-  padding: 22px;
+  padding: 20px;
 }
 
 .panel-header {
@@ -135,18 +145,20 @@
 
 .generate-button,
 .preset-chip,
-.download-link {
+.download-link,
+.history-item {
   border: none;
-  border-radius: 999px;
   cursor: pointer;
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
-    opacity 160ms ease;
+    opacity 160ms ease,
+    border-color 160ms ease;
 }
 
 .generate-button {
   padding: 14px 20px;
+  border-radius: 999px;
   background: linear-gradient(135deg, #0f766e, #f97316);
   color: #fff8ef;
   font-weight: 700;
@@ -156,7 +168,8 @@
 .generate-button:hover,
 .preset-chip:hover,
 .download-link:hover,
-.mode-tab:hover {
+.mode-tab:hover,
+.history-item:hover {
   transform: translateY(-1px);
 }
 
@@ -220,6 +233,7 @@
 .preset-chip {
   padding: 9px 12px;
   text-align: left;
+  border-radius: 999px;
   background: var(--chip-bg);
   color: var(--heading);
   border: 1px solid rgba(15, 118, 110, 0.16);
@@ -231,6 +245,25 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+.face-tip {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 16px;
+  padding: 14px 15px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  background: linear-gradient(135deg, rgba(236, 253, 245, 0.9), rgba(255, 247, 237, 0.85));
+}
+
+.face-tip strong {
+  color: var(--heading);
+}
+
+.face-tip span {
+  color: var(--muted);
+  font-size: 0.92rem;
 }
 
 .upload-card {
@@ -246,6 +279,91 @@
 
 .upload-card small {
   color: var(--muted);
+}
+
+.asset-strip {
+  display: grid;
+  gap: 10px;
+  margin: 2px 0 16px;
+}
+
+.asset-pill {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(18, 52, 45, 0.09);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.asset-pill img {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.asset-pill div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.asset-pill strong,
+.asset-pill span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asset-pill strong {
+  color: var(--heading);
+}
+
+.asset-pill span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.progress-card {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 15px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 118, 110, 0.16);
+  background: linear-gradient(135deg, rgba(255, 247, 237, 0.94), rgba(236, 253, 245, 0.94));
+}
+
+.progress-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.progress-copy strong {
+  color: var(--heading);
+}
+
+.progress-copy span,
+.progress-card small {
+  color: var(--muted);
+}
+
+.progress-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(18, 52, 45, 0.08);
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0f766e, #f97316);
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.25);
+  transition: width 320ms ease;
 }
 
 .advanced-panel {
@@ -275,8 +393,76 @@
   text-align: right;
 }
 
+.compare-card {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(18, 52, 45, 0.09);
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.compare-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: start;
+}
+
+.compare-head div {
+  display: grid;
+  gap: 4px;
+}
+
+.compare-head strong {
+  color: var(--heading);
+}
+
+.compare-head span,
+.compare-head small {
+  color: var(--muted);
+}
+
+.compare-stage {
+  position: relative;
+  min-height: 240px;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fef3c7, #d1fae5);
+}
+
+.compare-after,
+.compare-before {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.compare-before {
+  transition: clip-path 120ms ease;
+}
+
+.compare-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 0 0 1px rgba(18, 52, 45, 0.14);
+  transform: translateX(-50%);
+}
+
+.compare-slider {
+  width: 100%;
+  accent-color: #0f766e;
+}
+
 .empty-state {
-  min-height: 340px;
+  min-height: 260px;
   border-radius: 20px;
   display: grid;
   place-content: center;
@@ -336,9 +522,94 @@
   align-items: center;
   justify-content: center;
   padding: 10px 16px;
+  border-radius: 999px;
   text-decoration: none;
   color: #fff;
   background: #12342d;
+}
+
+.history-panel {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(18, 52, 45, 0.08);
+}
+
+.history-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  color: var(--muted);
+}
+
+.history-head strong {
+  color: var(--heading);
+}
+
+.history-empty {
+  color: var(--muted);
+  margin: 0;
+}
+
+.history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(18, 52, 45, 0.08);
+  text-align: left;
+}
+
+.history-item.active {
+  border-color: rgba(15, 118, 110, 0.4);
+  box-shadow: 0 12px 24px rgba(15, 118, 110, 0.08);
+}
+
+.history-thumbs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.history-thumbs img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  object-fit: cover;
+  background: linear-gradient(135deg, #fef3c7, #d1fae5);
+}
+
+.history-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.history-copy strong {
+  color: var(--heading);
+}
+
+.history-copy span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.history-copy p {
+  margin: 0;
+  color: var(--heading);
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-message {
@@ -361,13 +632,13 @@
 
 @media (max-width: 720px) {
   .page-shell {
-    padding: 14px 12px 28px;
+    padding: 12px 10px 24px;
   }
 
   .compact-hero,
   .control-panel,
   .preview-panel {
-    padding: 18px;
+    padding: 16px;
     border-radius: 20px;
   }
 
@@ -379,7 +650,9 @@
 
   .panel-header,
   .image-card-footer,
-  .mini-qr-card {
+  .mini-qr-card,
+  .compare-head,
+  .history-head {
     flex-direction: column;
     align-items: stretch;
   }
@@ -392,5 +665,26 @@
   .download-link,
   .mode-tab {
     width: 100%;
+  }
+
+  .history-item {
+    grid-template-columns: 1fr;
+  }
+
+  .history-thumbs {
+    grid-template-columns: repeat(2, minmax(0, 72px));
+  }
+
+  .asset-pill {
+    grid-template-columns: 52px 1fr;
+  }
+
+  .asset-pill img {
+    width: 52px;
+    height: 52px;
+  }
+
+  .compare-stage {
+    min-height: 200px;
   }
 }
